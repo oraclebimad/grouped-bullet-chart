@@ -82,6 +82,17 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
   /* jshint unused:true, jquery:true, curly:false */
   /* global Utils */
 
+  function getFieldName (field) {
+    var last;
+    var name = '';
+    if (typeof field === 'string') {
+      field = field.slice(field.lastIndexOf('/') + 1);
+      last = field.indexOf(':');
+      last = last > 0 ? last + 1 : field.length;
+      name = field.slice(0, last);
+    }
+    return name;
+  }
   /**
    * Creates a new data model to manipulate the data
    * @param data Array Array of arrays
@@ -114,10 +125,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       var field = column.field;
       var last;
       metaData[column.name] = column;
-      field = field.slice(field.lastIndexOf('/') + 1);
-      last = field.indexOf(':');
-      last = last > 0 ? last + 1 : field.length;
-      column.label = field.slice(0, last);
+      column.label = getFieldName(column.field);
       columns.push(column.name);
       if (column.fieldType === 'measure')
         numericColumns.push(column.name);
