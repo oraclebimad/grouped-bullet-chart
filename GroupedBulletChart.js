@@ -2,11 +2,13 @@
   id: '03efcb62a28c.GroupedBulletChart',
   component: {
     'name': 'Grouped Bullet Chart',
-    'tooltip': 'Insert Grouped Bullet Chart'
+    'tooltip': 'Insert Grouped Bullet Chart',
+    'cssClass': 'bullet-chart-plugin'
   },
   properties: [
     {key: "width", label: "Width", type: "length", value: "320px"},
     {key: "height", label: "Height", type: "length", value: "300px"},
+    {key: "showlabel", label: "Show Label", type: "boolean", value: true},
     {key: "axis", label: "Axis Position", type: "lov", options: [
       {label: "Top", value: "top"},
       {label: "Bottom", value: "bottom"},
@@ -49,18 +51,23 @@
   dataType: 'arrayOfArrays',
   render: function (context, container, data, fields, props) {
     var self = this;
+    var nested;
     container.innerHTML = '';
 
     this.dataModel = new Utils.DataModel(data, fields);
-    dd = this.dataModel.sortBy('baseline').desc().indexColumns();
+    this.dataModel.sortBy('baseline').desc().indexColumns();
+    nested = this.dataModel.nest();
+    //override key to place correct label
+    nested.key = Utils.capitalize(this.dataModel.indexedMetaData.current.label);
 
     props.numberprefix = typeof props.numberprefix !== 'boolean' ? props.numberprefix === 'true' : props.numberprefix;
-    this.visualization = new Visualizations.BulletChart(container, this.dataModel.nest(), {
+    this.visualization = new Visualizations.BulletChart(container, nested, {
       width: parseInt(props.width, 10),
       height: parseInt(props.height, 10),
       numberFormat: Utils.format(props.numberformat, {
         symbol: props.currencysymbol
       }),
+      showLabel: typeof props.showlabel === 'boolean' ? props.showlabel : props.showlabel === 'true',
       labelPosition: 'top',
       axisOnChart: true,
       axisFormat: Utils.format(props.numberformat, {

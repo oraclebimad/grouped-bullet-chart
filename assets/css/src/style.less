@@ -2,15 +2,147 @@
     display:none;
 }
 
-.chart-wrapper {
+.bullet-chart-plugin {
   font-family: "Helvetica Neue", Helvetica, SansSerif;
-  position: relative;
-  overflow: visible;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
   font-size: 14px;
-}
+  .chart-wrapper {
+    position: relative;
+    overflow: visible;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
 
+  .bullet-legends {
+    overflow: hidden;
+    .current, .target {
+      width: 49%;
+      margin-right: 1%;
+      display: block;
+      height: 100%;
+      float:left;
+      &:before {
+        content: '';
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+      }
+    }
+
+    .legend, .label {
+      display: inline-block;
+    }
+
+    .legend {
+      vertical-align: middle;
+      opacity: 0.7;
+    }
+
+    .label {
+      margin-left: 5px;
+      color: #A6A9A8;
+      text-shadow: none;
+      text-transform: capitalize;
+      font-weight: 100;
+      span {
+        display: inline-block;
+        vertical-align: middle;
+      }
+    }
+
+  }
+
+  
+  .croptext {
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 99%;
+      overflow: hidden;
+  }
+
+  .theme-black {
+    .bullet-charts-container {
+      .group.label {
+        fill:#fff;
+        color:#fff;
+      }
+    }
+  }
+
+
+  .bullet-charts-container {
+
+    .marker line {
+      stroke: #A6A9A8;
+      stroke-width: 1px;
+    }
+
+    rect {
+      stroke: none;
+    }
+
+    .label-wrapper span{
+      vertical-align: middle;
+      display: inline-block;
+    }
+
+    .label {
+      fill: #000000;
+      color: #000000;
+      font-weight: 300;
+      text-shadow: none;
+      text-anchor: start;
+      height: 100%;
+      text-align: left;
+      padding-left: 5px;
+
+      &:before {
+        content: '';
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+        margin-right: -0.25em;
+      }
+
+    }
+
+
+    .label.current {
+      fill: #A6A9A8;
+      color: #A6A9A8;
+      font-weight: 200;
+      text-align: right;
+      font-size: .9em;
+    }
+
+    .threshold {
+      opacity: 0.75;
+    }
+  }
+
+  .axis-wrapper {
+    line, path {
+      fill: none;
+      stroke: #BEC0BF;
+    }
+    text {
+      fill: #A6A9A8;
+      font-size: .9em;
+      font-weight: 200;
+    }
+
+    path {
+      display: none;
+    }
+  }
+
+  .has-selected .bullet-chart {
+    opacity: .25 !important; /*:( used in order to override from style property*/
+  }
+
+  .has-selected .bullet-chart.selected {
+    opacity: 1 !important; /*:( used in order to override from style property*/
+  }
+}
 
 /**
  *
@@ -55,93 +187,3 @@
  * Details popup
  */
 
-.croptext {
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: 99%;
-    overflow: hidden;
-}
-
-.theme-black {
-  .bullet-charts-container {
-    .group.label {
-      fill:#fff;
-      color:#fff;
-    }
-  }
-}
-
-
-.bullet-charts-container {
-
-  .marker line {
-    stroke: #A6A9A8;
-    stroke-width: 1px;
-  }
-
-  rect {
-    stroke: none;
-  }
-
-  .label-wrapper span{
-    vertical-align: middle;
-    display: inline-block;
-  }
-
-  .label {
-    fill: #000000;
-    color: #000000;
-    font-weight: 300;
-    text-shadow: none;
-    text-anchor: start;
-    height: 100%;
-    text-align: left;
-    padding-left: 5px;
-
-    &:before {
-      content: '';
-      display: inline-block;
-      height: 100%;
-      vertical-align: middle;
-      margin-right: -0.25em;
-    }
-
-  }
-
-
-  .label.current {
-    fill: #A6A9A8;
-    color: #A6A9A8;
-    font-weight: 200;
-    text-align: right;
-    font-size: .9em;
-  }
-
-  .threshold {
-    opacity: 0.75;
-  }
-}
-
-.axis-wrapper {
-  line, path {
-    fill: none;
-    stroke: #BEC0BF;
-  }
-  text {
-    fill: #A6A9A8;
-    font-size: .9em;
-    font-weight: 200;
-  }
-}
-
-.bullet-chart .axis-wrapper path {
-  display: none;
-}
-
-.has-selected .bullet-chart {
-  opacity: .25 !important; /*:( used in order to override from style property*/
-}
-
-.has-selected .bullet-chart.selected {
-  opacity: 1 !important; /*:( used in order to override from style property*/
-}

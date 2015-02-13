@@ -706,12 +706,14 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       self.createForeignObject(d3.select(this), data);
     });
 
-    labelsContainer.each(function () {
-      var label = d3.select(this).select('span.croptext');
-      label.text(function (d) {
-        return isNaN(d.value) ? d.value : opts.numberFormat(d.value);
+    if (this.options.showLabel) {
+      labelsContainer.each(function () {
+        var label = d3.select(this).select('span.croptext');
+        label.text(function (d) {
+          return isNaN(d.value) ? d.value : opts.numberFormat(d.value);
+        });
       });
-    });
+    }
 
     //animation
     if (self.animations) {
