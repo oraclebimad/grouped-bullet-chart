@@ -602,22 +602,36 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     if (this.options.axisOnChart)
       return this;
 
+    var axis = this.axis;
+
     this.axis.attr({
       'transform': this.getAxisPosition()
-    }).call(this.axisHelper);
+    });
 
+    if (this.animations)
+      axis = axis.transition().duration(700).delay(200);
+
+    axis.call(this.axisHelper);
     return this;
   };
 
   BulletChart.prototype.createBulletAxis = function (bullet) {
     if (!this.options.axisOnChart)
       return this;
-    var y = this.options.chart.height;
-    y *= this.options.showLabel ? 2 : 1;
-    bullet.append('g').attr({
-      'class': 'axis-wrapper',
-      'transform': 'translate(0, ' + y + ')'
-    }).call(this.axisHelper);
+    var axis = bullet.select('g.axis-wrapper');
+    if (!axis.size()) {
+      var y = this.options.chart.height;
+      y *= this.options.showLabel ? 2 : 1;
+      axis = bullet.append('g').attr({
+        'class': 'axis-wrapper',
+        'transform': 'translate(0, ' + y + ')'
+      });
+    }
+
+    if (this.animations)
+      axis = axis.transition().duration(700).delay(200);
+
+    axis.call(this.axisHelper);
     return this;
   };
 

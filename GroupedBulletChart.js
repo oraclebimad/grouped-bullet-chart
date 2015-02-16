@@ -9,6 +9,7 @@
     {key: "width", label: "Width", type: "length", value: "320px"},
     {key: "height", label: "Height", type: "length", value: "300px"},
     {key: "showlabel", label: "Show Label", type: "boolean", value: true},
+    {key: "showlegends", label: "Show Legends", type: "boolean", value: false},
     {key: "numberformat", label: "Numeric Format", type: "lov", options: [
       {label: 'Raw', value: 'raw'},
       {label: 'Currency', value: 'currency'},
@@ -55,6 +56,7 @@
     nested = this.dataModel.nest();
     //override key to place correct label
     nested.key = Utils.capitalize(this.dataModel.indexedMetaData.current.label);
+    console.log(nested);
 
     props.numberprefix = typeof props.numberprefix !== 'boolean' ? props.numberprefix === 'true' : props.numberprefix;
     this.visualization = new Visualizations.BulletChart(container, nested, {
@@ -64,6 +66,7 @@
         symbol: props.currencysymbol
       }),
       showLabel: typeof props.showlabel === 'boolean' ? props.showlabel : props.showlabel === 'true',
+      renderLegends: typeof props.showlegends === 'boolean' ? props.showlegends : props.showlegends === 'true',
       labelPosition: 'top',
       axisOnChart: true,
       axisFormat: Utils.format(props.numberformat, {
@@ -105,8 +108,11 @@
   refresh: function (context, container, data, fields, props) {
     if (!this.avoidRefresh) {
       this.dataModel.setData(data).indexColumns();
+      var nested = this.dataModel.nest();
+      //override key to place correct label
+      nested.key = Utils.capitalize(this.dataModel.indexedMetaData.current.label);
       this.visualization.animate(true);
-      this.visualization.setData(this.dataModel.nest().values).render();
+      this.visualization.setData(nested).render();
     }
     this.avoidRefresh = false;
   },
