@@ -361,6 +361,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     axis: {
       height: 20
     },
+    showLabel: true,
     axisOnChart: false,
     labelPosition: 'right',
     axisPosition: 'top',
@@ -374,6 +375,12 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       margin: {top: 10}
     },
     label: {},
+    legend: {
+      height: 0,
+      paddingTop: 10,
+      paddingBottom: 10
+    },
+    renderLegends: true,
     //values represented in percentages
     thresholds: {
       lowest: 33,
@@ -448,8 +455,6 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     chartHeight -= this.options.axisOnChart ? 0 : this.options.axis.height;
     this.svg = this.container.append('div').attr({
       'class': 'chart-wrapper'
-    }).style({
-      'max-height': chartHeight + 'px'
     }).append('svg');
 
     this.svg.attr({
@@ -458,7 +463,11 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       'height': this.options.height
     });
 
-    this.createAxisWrapper();
+    this.renderLegends().createAxisWrapper();
+    chartHeight -= this.options.legend.height;
+    this.container.select('div.chart-wrapper').style({
+      'max-height': chartHeight + 'px'
+    });
 
     this.group = this.svg.append('g').attr({
       'class': 'bullet-charts-group',
@@ -475,12 +484,12 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
    *
    */
   BulletChart.prototype.init = function () {
+    this.setColors(this.options.colors);
     this.calculateLayout().createDOM();
     var svg = this.svg.node();
     var self = this;
 
     this.scale = d3.scale.linear().range([0, this.options.chart.width]);
-    this.setColors(this.options.colors);
     this.renderPopup();
 
 
@@ -514,6 +523,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     if (Utils.isObject(data))
       data = [data];
 
+    BUFFER = data.length > 1 ? BUFFER : 1;
     this.data = data;
 
     var scale = this.scale;
@@ -602,9 +612,11 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
   BulletChart.prototype.createBulletAxis = function (bullet) {
     if (!this.options.axisOnChart)
       return this;
+    var y = this.options.chart.height;
+    y *= this.options.showLabel ? 2 : 1;
     bullet.append('g').attr({
       'class': 'axis-wrapper',
-      'transform': 'translate(0, ' + (this.options.chart.height * 2) + ')'
+      'transform': 'translate(0, ' + y + ')'
     }).call(this.axisHelper);
     return this;
   };
@@ -613,6 +625,12 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     var renderInner = Utils.proxy(this.renderInnerChart, this);
     var opts = this.options;
     var self = this;
+
+    if (this.data.length) {
+      this.group.attr({
+        'transform': 'translate(' + this.options.margin.left + ', 0)'
+      });
+    }
 
     this.svg.attr('height', this.getSVGHeight());
     this.container.select('div.chart-wrapper').style({
@@ -640,9 +658,12 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
   };
 
   BulletChart.prototype.renderInnerChart = function (bullet, data) {
-    var labelsContainer = bullet.selectAll('g.label-container').data([
+    var labelsData = [
       {key: 'group', value: data.key}
-    ], BulletChart.key);
+    ];
+    if (!this.options.showLabel)
+      labelsData = [];
+    var labelsContainer = bullet.selectAll('g.label-container').data(labelsData, BulletChart.key);
     var graphic = bullet.select('g.graphic');
     var opts = this.options;
     var self = this;
@@ -706,14 +727,12 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       self.createForeignObject(d3.select(this), data);
     });
 
-    if (this.options.showLabel) {
-      labelsContainer.each(function () {
-        var label = d3.select(this).select('span.croptext');
-        label.text(function (d) {
-          return isNaN(d.value) ? d.value : opts.numberFormat(d.value);
-        });
+    labelsContainer.each(function () {
+      var label = d3.select(this).select('span.croptext');
+      label.text(function (d) {
+        return isNaN(d.value) ? d.value : opts.numberFormat(d.value);
       });
-    }
+    });
 
     //animation
     if (self.animations) {
@@ -745,10 +764,57 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     return 'translate(' + x + ', ' + y + ')';
   };
 
+  BulletChart.prototype.renderLegends = function () {
+    if (!this.options.renderLegends)
+      return this;
+
+    var padding = this.options.labelPosition === 'top' ? this.options.chart.margin.top : (this.options.label.width + this.options.margin.left);
+    var colors =  this.colors;
+    var lineWidth = 4;
+    var lineHeight = 18;
+    var labelWidth = ((this.options.width - padding) / 2);
+    labelWidth = labelWidth - (labelWidth * 0.1);
+    this.legends = this.container.insert('div', 'div.chart-wrapper');
+    this.legends.attr({
+      'class': 'bullet-legends'
+    }).style({
+      'width': this.options.chart.width + 'px',
+      'padding-left': padding + 'px',
+      'padding-top': this.options.legend.paddingTop + 'px',
+      'padding-bottom': this.options.legend.paddingBottom + 'px'
+    });
+
+
+    var current = this.legends.append('div').attr('class', 'current');
+    var target = this.legends.append('div').attr('class', 'target');
+
+    current.append('div').attr('class', 'legend').style({
+      'background-color': colors('current'),
+      'width': lineHeight + 'px',
+      'height': lineWidth + 'px'
+    });
+    console.log(labelWidth);
+    current.append('div').attr('class', 'label').style({
+      width: (labelWidth - lineHeight) + 'px'
+    }).append('span').attr('class', 'croptext').text(Utils.capitalize(this.options.currentLabel));
+
+    target.append('div').attr('class', 'legend').style({
+      'background-color': colors('current'),
+      'height': lineHeight + 'px',
+      'width': lineWidth + 'px'
+    });
+    target.append('div').attr('class', 'label').style({
+      width: (labelWidth - lineWidth) + 'px'
+    }).append('span').attr('class', 'croptext').text(Utils.capitalize(this.options.targetLabel));
+    this.options.legend.height = this.legends.node().clientHeight;
+
+    return this;
+  };
+
   BulletChart.prototype.getGraphicPosition = function () {
     var x = 0;
     var y = 0;
-    if (this.options.labelPosition === 'top')
+    if (this.options.labelPosition === 'top' && this.options.showLabel)
       y = this.options.chart.height;
     if (this.options.labelPosition === 'right')
       x = this.options.label.width;

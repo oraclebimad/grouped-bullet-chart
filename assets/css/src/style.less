@@ -2,7 +2,7 @@
     display:none;
 }
 
-.bullet-chart-plugin {
+.grouped-bullet-chart-plugin {
   font-family: "Helvetica Neue", Helvetica, SansSerif;
   font-size: 14px;
   .chart-wrapper {
@@ -10,6 +10,10 @@
     overflow: visible;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .label {
+    text-transform: capitalize;
   }
 
   .bullet-legends {
@@ -42,7 +46,8 @@
       color: #A6A9A8;
       text-shadow: none;
       text-transform: capitalize;
-      font-weight: 100;
+      font-weight: 300;
+      font-size: 12px;
       span {
         display: inline-block;
         vertical-align: middle;
@@ -51,7 +56,6 @@
 
   }
 
-  
   .croptext {
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -59,7 +63,7 @@
       overflow: hidden;
   }
 
-  .theme-black {
+  &.theme-black {
     .bullet-charts-container {
       .group.label {
         fill:#fff;
@@ -119,7 +123,7 @@
     }
   }
 
-  .axis-wrapper {
+  .axis, .axis-wrapper {
     line, path {
       fill: none;
       stroke: #BEC0BF;
@@ -129,10 +133,10 @@
       font-size: .9em;
       font-weight: 200;
     }
+  }
 
-    path {
-      display: none;
-    }
+  .axis-wrapper path {
+    display: none;
   }
 
   .has-selected .bullet-chart {
