@@ -813,7 +813,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     }).append('span').attr('class', 'croptext').text(Utils.capitalize(this.options.currentLabel));
 
     target.append('div').attr('class', 'legend').style({
-      'background-color': colors('current'),
+      'background-color': colors('target'),
       'height': lineHeight + 'px',
       'width': lineWidth + 'px'
     });

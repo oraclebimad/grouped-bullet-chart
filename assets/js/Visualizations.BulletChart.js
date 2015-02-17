@@ -496,7 +496,7 @@
     }).append('span').attr('class', 'croptext').text(Utils.capitalize(this.options.currentLabel));
 
     target.append('div').attr('class', 'legend').style({
-      'background-color': colors('current'),
+      'background-color': colors('target'),
       'height': lineHeight + 'px',
       'width': lineWidth + 'px'
     });
