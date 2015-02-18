@@ -403,7 +403,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
    * @returns String key for selection
    */
   BulletChart.key = function (data) {
-    return data.key;
+    return data.key.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-{2,}/g, '-');
   };
 
   BulletChart.prototype.calculateLayout = function () {
@@ -473,7 +473,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       'class': 'bullet-charts-group',
       'transform': 'translate(' + this.options.margin.left + ',' + this.options.chart.margin.top + ')'
     });
-    this.bullets = this.group.selectAll('g.bullet-charts');
+    this.bullets = this.group.selectAll('g.bullet-chart');
     this.marker = this.group.append('g').attr('class', 'marker');
     return this;
   };
