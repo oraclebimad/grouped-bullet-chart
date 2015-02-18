@@ -97,7 +97,7 @@ module.exports = function (grunt) {
           'assets/js/externals/d3/d3.min.js',
           'assets/js/Utils/Utils.js',
           'assets/js/Utils/Utils.DataModel.js',
-          'assets/js/Visualizations.BulletChart.js'
+          'assets/core/js/Visualizations.BulletChart.js'
         ],
         dest: 'assets/js/GroupedBulletChart.concat.js'
       }
