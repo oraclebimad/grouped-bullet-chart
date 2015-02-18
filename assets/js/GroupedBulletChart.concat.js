@@ -687,7 +687,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
         'transform': this.getGraphicPosition()
       });
     }
-    var threshold = graphic.selectAll('rect.threshold').data(data.__thresholds__);
+    var threshold = graphic.selectAll('rect.threshold').data(data.__thresholds__, BulletChart.key);
     var current = graphic.selectAll('rect.current').data([{key: 'current', value: data.__width__}],  BulletChart.key);
     var target = graphic.selectAll('rect.target').data([{key: 'target', value: data.__target_x__}], BulletChart.key);
     //create background based on the max-width - left-label
@@ -784,7 +784,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
 
     var padding = this.options.labelPosition === 'top' ? this.options.chart.margin.top : (this.options.label.width + this.options.margin.left);
     var colors =  this.colors;
-    var lineWidth = 4;
+    var lineWidth = 6;
     var lineHeight = 18;
     var labelWidth = ((this.options.width - padding) / 2);
     labelWidth = labelWidth - (labelWidth * 0.1);
@@ -802,24 +802,34 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     var current = this.legends.append('div').attr('class', 'current');
     var target = this.legends.append('div').attr('class', 'target');
 
-    current.append('div').attr('class', 'legend').style({
-      'background-color': colors('current'),
-      'width': lineHeight + 'px',
-      'height': lineWidth + 'px'
-    });
-    console.log(labelWidth);
-    current.append('div').attr('class', 'label').style({
-      width: (labelWidth - lineHeight) + 'px'
-    }).append('span').attr('class', 'croptext').text(Utils.capitalize(this.options.currentLabel));
+    current.append('div')
+           .attr('class', 'label')
+           .style({
+              width: (labelWidth - lineHeight) + 'px'
+            })
+            .append('div').attr('class', 'croptext')
+            .html('<div class="legend"></div> ' + Utils.capitalize(this.options.currentLabel));
 
-    target.append('div').attr('class', 'legend').style({
-      'background-color': colors('target'),
-      'height': lineHeight + 'px',
-      'width': lineWidth + 'px'
+   current.select('.legend').style({
+      'background-color': colors('current'),
+      'height': this.options.chart.inner.height + 'px',
+      'width': lineHeight + 'px',
+      'margin-bottom': '2px'
     });
-    target.append('div').attr('class', 'label').style({
-      width: (labelWidth - lineWidth) + 'px'
-    }).append('span').attr('class', 'croptext').text(Utils.capitalize(this.options.targetLabel));
+
+    target.append('div')
+           .attr('class', 'label')
+           .style({
+              width: (labelWidth - lineWidth) + 'px'
+            })
+            .append('div').attr('class', 'croptext')
+            .html('<div class="legend"></div> ' + Utils.capitalize(this.options.targetLabel));
+    target.select('.legend').style({
+      'background-color': colors('target'),
+      'width': this.options.chart.target.width + 'px',
+      'height': this.options.chart.target.height + 'px'
+    });
+
     this.options.legend.height = this.legends.node().clientHeight;
 
     return this;
