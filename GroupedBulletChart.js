@@ -8,6 +8,7 @@
   properties: [
     {key: "width", label: "Width", type: "length", value: "1024px"},
     {key: "height", label: "Height", type: "length", value: "300px"},
+    {key: "labelfont", label: "Label Font Size", type: "fontsize", value: "14px"},
     {key: "showlabel", label: "Show Label", type: "boolean", value: true},
     {key: "showlegends", label: "Show Legends", type: "boolean", value: false},
     {key: "numberformat", label: "Number Format", type: "lov", options: [
@@ -86,6 +87,7 @@
         target: props.targetcolor
       },
       axisPosition: 'bottom',
+      labelFontSize: parseInt(props.labelfont, 10),
       opacity: props.opacity,
       currentLabel: this.dataModel.indexedMetaData.current.label,
       targetLabel: this.dataModel.indexedMetaData.baseline.label

@@ -28,12 +28,15 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       if (opts.decimals)
         format += '.2';
       if (opts.si)
-        format = 's';
+        format += 's';
       format += 'f';
       return d3.format(format);
     }
   };
   var Utils = {
+    isDesigner: function () {
+      return xdo && xdo.app && xdo.app.designer && xdo.app.designer.DesignerApplication;
+    },
     proxy: function (fn, thisArg) {
       return function () {
         return fn.apply(thisArg, Utils.toArray(arguments));
@@ -59,6 +62,9 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     isObject: function (obj) {
       return jQuery.isPlainObject(obj);
     },
+    isFunction: function (method) {
+      return typeof method === 'function';
+    },
     format: function (format, opts) {
       if (!(format in formats))
         format = 'raw';
@@ -66,6 +72,16 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     },
     capitalize: function (text) {
       return (text + '').toLowerCase().replace(/_/g, ' ');
+    },
+    ascending: function (a, b) {
+      if (!isNaN(a) && !isNaN(b))
+        return d3.ascending(a, b);
+      return (a + '').localeCompare(b);
+    },
+    descending: function (a, b) {
+      if (!isNaN(a) && !isNaN(b))
+        return d3.descending(a, b);
+      return (b + '').localeCompare(a);
     },
     isEmptyObject: jQuery.isEmptyObject,
     isArray: jQuery.isArray,
@@ -93,6 +109,42 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     }
     return name;
   }
+
+  var Parser = {
+    date: function (data) {
+      var date = new Date(data);
+      var year = date.getFullYear().toString();
+      var month = date.getMonth().toString();
+      return {
+        date: date,
+        year: year,
+        month: month,
+        yearmonth: year + month
+      };
+    },
+    parse: function (data) {
+      return data;
+    }
+  };
+
+  var Postprocessors = {
+    date: function (node, index, length, meta) {
+      //extend the object by parsing the date
+      var date;
+      var month = 0;
+      var day = 1;
+      if (meta.aggregate === 'year') {
+        date = new Date(node.key, month, day);
+      } else if(meta.aggregate === 'yearmonth') {
+        month = (length - 1) === index ? 11 : node.key.substring(4);
+        day = (length - 1) === index ? 31 : 1;
+        date = new Date(node.key.substring(0, 4), node.key.substring(4), day);
+      }
+      node[meta.name] = date;
+    }
+  };
+
+
   /**
    * Creates a new data model to manipulate the data
    * @param data Array Array of arrays
@@ -109,6 +161,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
        by: null,
        comparator: d3.descending
      };
+     this.aggregators = {};
      this.columnOrder = [];
   };
 
@@ -125,7 +178,10 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       var field = column.field;
       var last;
       metaData[column.name] = column;
-      column.label = getFieldName(column.field);
+      if (typeof column.label === 'undefined')
+        column.label = getFieldName(column.field);
+
+      column.parser = (column.dataType in Parser) ? column.dataType : 'parse';
       columns.push(column.name);
       if (column.fieldType === 'measure')
         numericColumns.push(column.name);
@@ -154,10 +210,14 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
   DataModel.prototype.indexColumns = function () {
     var indexed = [];
     var columns = this.columns;
+    var metadata = this.indexedMetaData;
     this.data.forEach(function (row) {
       var indexedRow = {};
       row.forEach(function (value, index) {
-        indexedRow[columns[index]] = value;
+        var name = columns[index];
+        var type = metadata[name].parser;
+        indexedRow[name] = value;
+        indexedRow[name + '_parsed'] = Parser[metadata[name].parser](value);
       });
       indexed.push(indexedRow);
     });
@@ -207,7 +267,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
    * @returns DataModel
    */
   DataModel.prototype.asc = function () {
-    this.sort.comparator = d3.ascending;
+    this.sort.comparator = Utils.ascending;
     return this;
   };
 
@@ -216,7 +276,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
    * @returns DataModel
    */
   DataModel.prototype.desc = function () {
-    this.sort.comparator = d3.descending;
+    this.sort.comparator = Utils.descending;
     return this;
   };
 
@@ -225,17 +285,23 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
    * @return Object
    */
   DataModel.prototype.nest = function () {
+    var aggregators = this.aggregators;
+    var meta = this.indexedMetaData;
     var nest = d3.nest();
     var numeric = {};
+    var columnTypes = [];
     var root = {
       key: 'root',
     };
     var nested;
 
     this.columnOrder.forEach(function (column) {
-       nest.key(function (node) {
-          return node[column];
-       });
+      var columnMeta = meta[column];
+      var aggregator = aggregators[columnMeta.dataType];
+      columnTypes.push(columnMeta);
+      nest.key(function (node) {
+        return aggregator ? aggregator(node, column) : node[column];
+      });
     });
 
     //Create this object dinamically based on the numeric columns
@@ -259,12 +325,32 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     this.numericColumns.forEach(function (column) {
       accumulate(root, column);
     });
-    removeLeaf(root);
+    postProcess(root, columnTypes);
 
     if (this.sort.by)
       sort(root.values, this.sort.by, this.sort.comparator);
 
     return root;
+  };
+
+  DataModel.prototype.dateAggregateBy = function (aggregate) {
+    var aggregators = {'year': true, 'month': true, 'yearmonth': true};
+    var key;
+    var column;
+    if (!(aggregate in aggregators))
+      aggregate = 'year';
+
+    for (key in this.indexedMetaData) {
+      column = this.indexedMetaData[key];
+      if (column.dataType === 'date')
+        column.aggregate = aggregate;
+    }
+    //create the aggregator and store it for later use
+    this.aggregators.date = function (data, column) {
+      return data[column + '_parsed'][aggregate];
+    };
+
+    return this;
   };
 
   function sort (data, key, order) {
@@ -298,10 +384,14 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     }
   }
 
-  function removeLeaf (data) {
+  function postProcess (data, columns) {
     if (data.values && Utils.isArray(data.values)) {
-      data.values.forEach(function (node) {
-         removeLeaf(node);
+      var valuesLength = data.values.length;
+      var column = columns.shift();
+      data.values.forEach(function (node, index) {
+        if (column && column.dataType in Postprocessors)
+          Postprocessors[column.dataType](node, index, valuesLength, column);
+        postProcess(node, columns);
       });
     } else if (data.values) {
       delete data.values;
@@ -782,7 +872,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     if (!this.options.renderLegends)
       return this;
 
-    var padding = this.options.labelPosition === 'top' ? this.options.chart.margin.top : (this.options.label.width + this.options.margin.left);
+    var padding = this.options.labelPosition === 'top' ? this.options.chart.margin.top : 0;
     var colors =  this.colors;
     var lineWidth = 6;
     var lineHeight = 18;
@@ -792,22 +882,16 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     this.legends.attr({
       'class': 'bullet-legends'
     }).style({
-      'width': this.options.chart.width + 'px',
-      'padding-left': padding + 'px',
+      'width': this.options.width + 'px',
       'padding-top': this.options.legend.paddingTop + 'px',
       'padding-bottom': this.options.legend.paddingBottom + 'px'
     });
 
 
-    var current = this.legends.append('div').attr('class', 'current');
-    var target = this.legends.append('div').attr('class', 'target');
+    var current = this.legends.append('div').attr('class', 'current label');
+    var target = this.legends.append('div').attr('class', 'target label');
 
-    current.append('div')
-           .attr('class', 'label')
-           .style({
-              width: (labelWidth - lineHeight) + 'px'
-            })
-            .append('div').attr('class', 'croptext')
+    current.append('div').attr('class', 'croptext')
             .html('<div class="legend"></div> ' + Utils.capitalize(this.options.currentLabel));
 
    current.select('.legend').style({
@@ -817,12 +901,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       'margin-bottom': '2px'
     });
 
-    target.append('div')
-           .attr('class', 'label')
-           .style({
-              width: (labelWidth - lineWidth) + 'px'
-            })
-            .append('div').attr('class', 'croptext')
+    target.append('div').attr('class', 'croptext')
             .html('<div class="legend"></div> ' + Utils.capitalize(this.options.targetLabel));
     target.select('.legend').style({
       'background-color': colors('target'),
@@ -890,6 +969,8 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
 
     foreign.append('xhtml:div').attr({
       'class': 'label ' + data.key
+    }).style({
+      'font-size': this.options.labelFontSize + 'px'
     }).append('xhtml:span').attr('class', 'croptext');
   };
 
