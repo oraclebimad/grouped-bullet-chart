@@ -45,6 +45,9 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     toArray: function (obj) {
       return Array.prototype.slice.call(obj);
     },
+    stringToBoolean: function(obj){
+      return typeof obj === 'boolean' ? obj : obj.toLowerCase() === "true";
+    },
     deferred: jQuery.Deferred,
     pluck: function (data, key) {
       var values = [];
@@ -75,12 +78,12 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     },
     ascending: function (a, b) {
       if (!isNaN(a) && !isNaN(b))
-        return d3.ascending(a, b);
+        return d3.ascending(+a, +b);
       return (a + '').localeCompare(b);
     },
     descending: function (a, b) {
       if (!isNaN(a) && !isNaN(b))
-        return d3.descending(a, b);
+        return d3.descending(+a, +b);
       return (b + '').localeCompare(a);
     },
     isEmptyObject: jQuery.isEmptyObject,
@@ -190,6 +193,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     this.metaData = meta;
     this.indexedMetaData = metaData;
     this.columns = columns;
+    this.doAggregate = true;
     return this;
   };
 
@@ -227,12 +231,18 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
 
   /**
    * Sets the colum order to create the hierarchical object.
-   * All numeric columns will be discarded and placed at the end of the hierarchy
+   * All numeric columns will be discarded and placed at the end of the hierarchy.
+   * If second argument is specified as false the nest method will only include the fields specified on the columns parameter
+   * If second argument is missing or true, then the hierarchical data will include first the columns specified, and then the
+   * rest of te string columns.
    * @param columns Array
+   * @param nestExtras Boolean Default true, will include extra string columns in the hierarchy
    * @returns DataModel
    */
-  DataModel.prototype.setColumnOrder = function (columns) {
+  DataModel.prototype.setColumnOrder = function (columns, nestExtras) {
+    nestExtras = typeof nestExtras === 'boolean' ? nestExtras : true;
     var columnOrder = [];
+    var extraColumns = nestExtras ? this.metaData.slice() : [];
     if (!Utils.isArray(columns))
       columns = [];
 
@@ -243,7 +253,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
           columnOrder.push(column);
       }, this);
       //Then add any missing string columns to the end of the array
-      this.metaData.forEach(function (column) {
+      extraColumns.forEach(function (column) {
         if (columns.indexOf(column.name) === -1 && column.fieldType !== 'measure')
           columnOrder.push(column.name);
       });
@@ -288,7 +298,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     var aggregators = this.aggregators;
     var meta = this.indexedMetaData;
     var nest = d3.nest();
-    var numeric = {};
+    var rollups = {};
     var columnTypes = [];
     var root = {
       key: 'root',
@@ -304,20 +314,22 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       });
     });
 
-    //Create this object dinamically based on the numeric columns
-    this.numericColumns.forEach(function (column) {
-      numeric[column] = function (leaves) {
-        return d3.sum(leaves, function (node) { return node[column]; });
-      };
-    });
+    if (this.doAggregate) {
+      //Create this object dinamically based on the numeric columns
+      this.numericColumns.forEach(function (column) {
+        rollups[column] = function (leaves) {
+          return d3.sum(leaves, function (node) { return node[column]; });
+        };
+      });
 
-    nest.rollup(function (leaves) {
-      var rollup = {};
-      for (var key in numeric)
-        rollup[key] = numeric[key](leaves);
+      nest.rollup(function (leaves) {
+        var rollup = {};
+        for (var key in rollups)
+          rollup[key] = rollups[key](leaves);
 
-      return rollup;
-    });
+        return rollup;
+      });
+    }
 
     nested = nest.entries(this.indexedData);
 
@@ -333,7 +345,15 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     return root;
   };
 
-  DataModel.prototype.dateAggregateBy = function (aggregate) {
+  DataModel.prototype.aggregate = function (aggregate) {
+    if (typeof aggregate === 'undefined')
+      return this.doAggregate;
+
+    this.doAggregate = typeof aggregate === 'boolean' ? aggregate : !!aggregate;
+    return this;
+  };
+
+  DataModel.prototype.dateGroupBy = function (aggregate) {
     var aggregators = {'year': true, 'month': true, 'yearmonth': true};
     var key;
     var column;
@@ -358,7 +378,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       return false;
 
     if (typeof order !== 'function')
-      order = d3.descending;
+      order = Utils.descending;
 
     data.sort(function (nodeA, nodeB) {
       return order(nodeA[key], nodeB[key]);
@@ -380,7 +400,7 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
         node[key] = node.values.reduce(function (prev, value) {
           return prev + accumulate(value, key);
         }, 0) :
-        node[key] = node.values[key];
+        node[key] = node.values ? node.values[key] : node[key];
     }
   }
 
@@ -445,6 +465,10 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     var filter = container.parentNode.querySelector('.filterinfo');
     if (filter)
       filter.style.display = 'none';
+    if (!this.options.baseLineFormat)
+      this.options.baseLineFormat = this.options.numberFormat;
+    if (!this.options.currentFormat)
+      this.options.currentFormat = this.options.numberFormat;
   };
 
   BulletChart.DEFAULTS = {
@@ -983,8 +1007,8 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
 
   BulletChart.prototype.showPopup = function (data, position) {
     this.popup.popup('close');
-    this.popup.find('.target.value').html(this.options.numberFormat(data.baseline));
-    this.popup.find('.current.value').html(this.options.numberFormat(data.current));
+    this.popup.find('.target.value').html(this.options.baseLineFormat(data.baseline));
+    this.popup.find('.current.value').html(this.options.currentFormat(data.current));
     this.popup.find('.percentage.value').html(parseInt((data.current * 100) / data.baseline, 10) + '%');
     this.popup.popup('open', position);
     return this;

@@ -50,20 +50,29 @@
   render: function (context, container, data, fields, props) {
     var self = this;
     var nested;
+    var indexedFields;
     container.innerHTML = '';
 
     this.dataModel = new Utils.DataModel(data, fields);
     this.dataModel.sortBy('baseline').desc().indexColumns();
+    indexedFields = this.dataModel.indexedMetaData;
     nested = this.dataModel.nest();
     //override key to place correct label
     nested.key = Utils.capitalize(this.dataModel.indexedMetaData.current.label);
-    console.log(nested);
 
     props.numberprefix = typeof props.numberprefix !== 'boolean' ? props.numberprefix === 'true' : props.numberprefix;
     this.visualization = new Visualizations.BulletChart(container, nested, {
       width: parseInt(props.width, 10),
       height: parseInt(props.height, 10),
       numberFormat: Utils.format(props.numberformat, {
+        symbol: props.currencysymbol
+      }),
+      baseLineFormat: this.formatter(indexedFields.baseline, {
+        numberformat: props.numberformat,
+        symbol: props.currencysymbol
+      }),
+      currentFormat: this.formatter(indexedFields.current, {
+        numberformat: props.numberformat,
         symbol: props.currencysymbol
       }),
       showLabel: typeof props.showlabel === 'boolean' ? props.showlabel : props.showlabel === 'true',
@@ -117,6 +126,12 @@
       this.visualization.setData(nested).render();
     }
     this.avoidRefresh = false;
+  },
+  formatter: function (fieldMetaData, opts) {
+    if (xdo.api.format && fieldMetaData.formatMask && fieldMetaData.dataType === 'numeric')
+      return xdo.api.format(fieldMetaData.dataType, fieldMetaData.formatMask, fieldMetaData.formatStyle);
+
+    return Utils.format(opts.numberformat, opts);
   },
   constructFilters: function (data, context) {
     var group = this.dataModel.indexedMetaData.group.field;
