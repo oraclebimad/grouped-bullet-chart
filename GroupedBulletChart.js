@@ -128,7 +128,7 @@
     this.avoidRefresh = false;
   },
   formatter: function (fieldMetaData, opts) {
-    if (xdo.api.format && fieldMetaData.formatMask && fieldMetaData.dataType === 'numeric')
+    if (xdo.api.format && fieldMetaData.formatMask && fieldMetaData.dataType === 'number')
       return xdo.api.format(fieldMetaData.dataType, fieldMetaData.formatMask, fieldMetaData.formatStyle);
 
     return Utils.format(opts.numberformat, opts);
