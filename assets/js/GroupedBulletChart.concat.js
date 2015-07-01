@@ -615,8 +615,10 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
 
     document.body.addEventListener('click', function (event) {
       var target = $(event.target || event.srcElement);
-      if (!target.is('g.bullet-chart') && !target.parents('g.bullet-chart').length && !target.is('.ui-popup-container') && !target.parents('.ui-popup-container').length)
-        self.popup.popup('close');
+      if (!target.is('g.bullet-chart') && !target.parents('g.bullet-chart').length && !target.is('.ui-popup-container') && !target.parents('.ui-popup-container').length) {
+        self.popup.close();
+        self.svg.selectAll('.bullet-chart').classed('has-popup', false);
+      }
     });
 
     return this;
@@ -955,34 +957,53 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
   };
 
   BulletChart.prototype.renderPopup = function () {
-    this.popup = jQuery(this.container.select('div.chart-wrapper').append('div').node());
-    this.popup.attr({
-      'class': 'ui-content popup-detail',
-      'data-arrow': 'b,l',
-      'data-role': 'popup',
-      'data-theme': 'a',
-      'data-history': false
-    });
+    if (Utils.isDesigner())
+      return this;
+    var $container = $(this.container.select('div.chart-wrapper'));
+    var popup = $container.find('div.popup');
+    var popupWidth;
+    if (!popup.length) {
+      popup = document.createElement('div');
+      document.body.appendChild(popup);
+      //this.container.node().appendChild(popup);
+      popup = $(popup).attr('class', 'popup');
 
-    var popupContent = ['<ul class="details">'];
-    popupContent.push('<li>');
-    popupContent.push('<span class="target label">' + Utils.capitalize(this.options.targetLabel) + ':</span>');
-    popupContent.push('<span class="target value"></span>');
-    popupContent.push('</li>');
-    popupContent.push('<li>');
-    popupContent.push('<span class="current label">' + Utils.capitalize(this.options.currentLabel) + ':</span>');
-    popupContent.push('<span class="current value"></span>');
-    popupContent.push('</li>');
-    popupContent.push('<li>');
-    popupContent.push('<span class="percentage value"></span>');
-    popupContent.push('<span class="percentage label">of the Target ' + Utils.capitalize(this.options.targetLabel) + '</span>');
-    popupContent.push('</li>');
-    popupContent.push('</ul>');
+      popup.attr({
+        'class': 'popup-bullet-chart hide',
+      });
 
-    this.popup.html(popupContent.join(''));
-    this.popup.popup();
+      var popupContent = [];
+      popupContent.push('<div class="details">');
+      popupContent.push('<div class="detail">');
+      popupContent.push('<div class="target label list-item">' + Utils.capitalize(this.options.targetLabel) + '</div>');
+      popupContent.push('<div class="target value list-item"></div>');
+      popupContent.push('</div>');
+      popupContent.push('<div class="detail">');
+      popupContent.push('<div class="current label list-item">' + Utils.capitalize(this.options.currentLabel) + '</div>');
+      popupContent.push('<div class="value list-item current"></div>');
+      popupContent.push('</div>');
+      popupContent.push('<div class="detail">');
+      popupContent.push('<div class="value list-item percentage"></div>');
+      popupContent.push('<div class="label list-item percengage">of the Target ' + Utils.capitalize(this.options.targetLabel) + '</div>');
+      popupContent.push('</div>');
+      popupContent.push('</div>');
+
+      this.popup = popup.html(popupContent.join(''));
+      this.popup.open = function (position) {
+        popup.removeClass('hide').css({
+          left: position.left,
+          top: position.top
+        });
+      };
+
+      this.popup.close = function () {
+        popup.addClass('hide');
+      };
+    }
+
     return this;
   };
+
 
   BulletChart.prototype.createForeignObject = function (container, data) {
     var foreign = container.append('foreignObject').attr({
@@ -1006,16 +1027,16 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
   };
 
   BulletChart.prototype.showPopup = function (data, position) {
-    this.popup.popup('close');
+    this.popup.close();
     this.popup.find('.target.value').html(this.options.baseLineFormat(data.baseline));
     this.popup.find('.current.value').html(this.options.currentFormat(data.current));
     this.popup.find('.percentage.value').html(parseInt((data.current * 100) / data.baseline, 10) + '%');
-    this.popup.popup('open', position);
+    this.popup.open(position);
     return this;
   };
 
   BulletChart.prototype.hidePopup = function () {
-    this.popup.popup('close');
+    this.popup.close();
     return this;
   };
 
@@ -1028,8 +1049,8 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
     this.hidePopup();
     if (!hasPopup) {
       this.showPopup(data, {
-        x: event.pageX,
-        y: event.pageY
+        left: (event.pageX + 5) + 'px',
+        top: (event.pageY - 10) + 'px'
       });
     }
   };
