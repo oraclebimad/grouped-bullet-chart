@@ -11,12 +11,6 @@
     {key: "labelfont", label: "Label Font Size", type: "fontsize", value: "14px"},
     {key: "showlabel", label: "Show Label", type: "boolean", value: true},
     {key: "showlegends", label: "Show Legends", type: "boolean", value: false},
-    {key: "numberformat", label: "Number Format", type: "lov", options: [
-      {label: 'Raw', value: 'raw'},
-      {label: 'Currency', value: 'currency'},
-      {label: 'Thousands separated', value: 'thousands'}
-    ], value: 'thousands'},
-    {key: "currencysymbol", label: "Currency Symbol", type: "string", value: ""},
     {key: "opacity", label: "Threshold opacity", type: "number", value: ".75"},
     {key: "lowest", label: "Lower Level %", type: "number", value: "33"},
     {key: "middle", label: "Middle Level %", type: "number", value: "66"},
@@ -61,28 +55,19 @@
     nested.key = Utils.capitalize(this.dataModel.indexedMetaData.current.label);
 
     props.numberprefix = typeof props.numberprefix !== 'boolean' ? props.numberprefix === 'true' : props.numberprefix;
+    var baseLineFormat = this.formatter(indexedFields.baseline);
+    var currentFormat = this.formatter(indexedFields.current);
     this.visualization = new Visualizations.BulletChart(container, nested, {
       width: parseInt(props.width, 10),
       height: parseInt(props.height, 10),
-      numberFormat: Utils.format(props.numberformat, {
-        symbol: props.currencysymbol
-      }),
-      baseLineFormat: this.formatter(indexedFields.baseline, {
-        numberformat: props.numberformat,
-        symbol: props.currencysymbol
-      }),
-      currentFormat: this.formatter(indexedFields.current, {
-        numberformat: props.numberformat,
-        symbol: props.currencysymbol
-      }),
+      numberFormat: currentFormat,
+      baseLineFormat: baseLineFormat,
+      currentFormat: currentFormat,
       showLabel: typeof props.showlabel === 'boolean' ? props.showlabel : props.showlabel === 'true',
       renderLegends: typeof props.showlegends === 'boolean' ? props.showlegends : props.showlegends === 'true',
       labelPosition: 'top',
       axisOnChart: true,
-      axisFormat: Utils.format(props.numberformat, {
-        symbol: props.currencysymbol,
-        si: true
-      }),
+      axisFormat: currentFormat,
       thresholds: {
         lowest: +props.lowest,
         middle: +props.middle,
@@ -128,10 +113,10 @@
     this.avoidRefresh = false;
   },
   formatter: function (fieldMetaData, opts) {
-    if (xdo.api.format && fieldMetaData.formatMask && fieldMetaData.dataType === 'number')
+    if (xdo.api.format && fieldMetaData.dataType === 'number')
       return xdo.api.format(fieldMetaData.dataType, fieldMetaData.formatMask, fieldMetaData.formatStyle);
 
-    return Utils.format(opts.numberformat, opts);
+    return Utils.format('thousands', opts);
   },
   constructFilters: function (data, context) {
     var group = this.dataModel.indexedMetaData.group.field;
