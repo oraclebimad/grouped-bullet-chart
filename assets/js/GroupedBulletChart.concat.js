@@ -911,29 +911,33 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       'width': this.options.width + 'px',
       'padding-top': this.options.legend.paddingTop + 'px',
       'padding-bottom': this.options.legend.paddingBottom + 'px'
+    }).append('div').attr({
+      'class': 'text-wrapper'
     });
+    var wrapper = this.legends.select('.text-wrapper');
 
 
-    var current = this.legends.append('div').attr('class', 'current label');
-    var target = this.legends.append('div').attr('class', 'target label');
-
-    current.append('div').attr('class', 'croptext')
-            .html('<div class="legend"></div> ' + Utils.capitalize(this.options.currentLabel));
-
-   current.select('.legend').style({
+    wrapper.insert('div').attr({
+      'class': 'current legend'
+    }).style({
       'background-color': colors('current'),
       'height': this.options.chart.inner.height + 'px',
       'width': lineHeight + 'px',
       'margin-bottom': '2px'
     });
-
-    target.append('div').attr('class', 'croptext')
-            .html('<div class="legend"></div> ' + Utils.capitalize(this.options.targetLabel));
-    target.select('.legend').style({
+    wrapper.append('div').attr('class', 'current label').html(
+      Utils.capitalize(this.options.currentLabel)
+    );
+    wrapper.append('div').attr({
+      'class': 'target legend'
+    }).style({
       'background-color': colors('target'),
       'width': this.options.chart.target.width + 'px',
       'height': this.options.chart.target.height + 'px'
     });
+    wrapper.append('div').attr('class', 'target label').html(
+      Utils.capitalize(this.options.targetLabel)
+    );
 
     this.options.legend.height = this.legends.node().clientHeight;
 
