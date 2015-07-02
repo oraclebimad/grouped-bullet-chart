@@ -986,9 +986,9 @@ return i?u+i*(n[r]-u):u},Bo.median=function(t,e){return arguments.length>1&&(t=t
       popupContent.push('<div class="current label list-item">' + Utils.capitalize(this.options.currentLabel) + '</div>');
       popupContent.push('<div class="value list-item current"></div>');
       popupContent.push('</div>');
-      popupContent.push('<div class="detail">');
-      popupContent.push('<div class="value list-item percentage"></div>');
-      popupContent.push('<div class="label list-item percengage">of the Target ' + Utils.capitalize(this.options.targetLabel) + '</div>');
+      popupContent.push('<div class="inline-detail">');
+      popupContent.push('<span class="value percentage"></span>');
+      popupContent.push('<span class="label percengage"> of the Target ' + Utils.capitalize(this.options.targetLabel) + '</span>');
       popupContent.push('</div>');
       popupContent.push('</div>');
 
